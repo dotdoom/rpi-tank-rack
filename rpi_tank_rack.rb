@@ -66,7 +66,11 @@ class WebApplication
 		@request_host = @request_host_with_port.split(':', 2).first
 
 		if (res = @params['res']) && res.any?
-			VideoStreamer.start(resolution: res.first)
+			if (fps = @params['fps']) && fps.any?
+                                VideoStreamer.start(resolution: res.first, framerate: fps.first)
+			else
+				VideoStreamer.start(resolution: res.first)
+			end
 		elsif !VideoStreamer.running?
 			VideoStreamer.start
 		end
