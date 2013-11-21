@@ -1,9 +1,40 @@
 <html>
-	<head><title>Raspberry PI Tank Control</title></head>
+	<head>
+		<title>Raspberry PI Tank Control</title>
+		<script type="text/javascript">
+			function go(action) {
+				var req = new XMLHttpRequest();
+				req.open('GET', '/go?action=' + action, true);
+				req.send();
+			}
+		</script>
+	</head>
 	<body>
-		Hello, <%= source_ip %>!<br/>
-		You are visiting page <%= path %> with params <%= params %><br/>
-		<a href="/another_page?with_another=params&other_things">Click Me</a>.
+		<pre>
+Hello, <%= source_ip %>!
+You are visiting page <%= path %> with params <%= params %>
+		</pre>
+
+		<table>
+			<tr>
+				<td/>
+				<td>
+					<input type='button' value='Up' onclick='javascript:go("up")' />
+				</td>
+				<td/>
+			</tr>
+			<tr>
+				<td>
+					<input type='button' value='Left' onclick='javascript:go("left")' />
+				</td>
+				<td>
+					<input type='button' value='Stop' onclick='javascript:go("stop")' />
+				</td>
+				<td>
+					<input type='button' value='Right' onclick='javascript:go("right")' />
+				</td>
+			</tr>
+		</table>
 	</body>
 </html>
 

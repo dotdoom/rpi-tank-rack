@@ -3,7 +3,7 @@ require 'erb'
 require 'socket'
 
 class RPiTankRack
-	ALLOWED_ACTIONS = %w(home left right)
+	ALLOWED_ACTIONS = %w(home go)
 	RESPONSE_INTERNAL_SERVER_ERROR = [500, { 'Content-Type' => 'text/plain' }, ['Internal Server Error']]
 	RESPONSE_FORBIDDEN = [403, { 'Content-Type' => 'text/plain' }, ['Forbidden']]
 
@@ -13,8 +13,14 @@ class RPiTankRack
 		[200, { 'Content-Type' => 'text/html' }, [ERB.new(File.read('home.html.erb')).result(binding)]]
 	end
 
-	def left
-		connection.puts 'set_output 1 3 12'
+	def go
+		case params['action'].to_s
+		when 'left'
+			#connection.puts 'set_output 1 3 12'
+		when 'right'
+			#connection.puts 'set_output 3 5 11'
+		end
+		[200, { 'Content-Type' => 'text/plain' }, ['ok']]
 	end
 
 	def call(env)
