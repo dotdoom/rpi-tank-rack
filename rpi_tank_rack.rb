@@ -6,6 +6,14 @@ class RPiTankRack
 	ALLOWED_ACTIONS = %w(home go)
 	RESPONSE_INTERNAL_SERVER_ERROR = [500, { 'Content-Type' => 'text/plain' }, ['Internal Server Error']]
 	RESPONSE_FORBIDDEN = [403, { 'Content-Type' => 'text/plain' }, ['Forbidden']]
+	CONTROLS = {
+		'left'       => '23',
+		'right'      => '26',
+		'forward'    => '26 23',
+		'backward'   => '24 22',
+		'tower_left' => '21',
+		'tower_right'=> '19',
+	}
 
 	attr_reader :params, :path, :source_ip
 
@@ -14,12 +22,7 @@ class RPiTankRack
 	end
 
 	def go
-		case params['action'].to_s
-		when 'left'
-			#connection.puts 'set_output 1 3 12'
-		when 'right'
-			#connection.puts 'set_output 3 5 11'
-		end
+		connection.puts "set_output #{CONTROLS[params['action'].join]}"
 		[200, { 'Content-Type' => 'text/plain' }, ['ok']]
 	end
 
