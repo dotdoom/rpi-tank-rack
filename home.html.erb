@@ -2,11 +2,31 @@
 	<head>
 		<title>Raspberry PI Tank Control</title>
 		<script type="text/javascript">
+			document.onkeydown = khandle
+
 			function go(action) {
 				var req = new XMLHttpRequest();
 				req.open('GET', '/go?action=' + action, true);
 				req.send();
 			}
+
+			function khandle(e) {
+				var ch = e.keyCode;
+				if (ch == 87 ) { 
+					go('forward'); 
+				} else if (ch == 83)  {
+					go('backward');
+				} else if (ch == 65) {
+					go('left');
+				} else if (ch == 68) {
+					go('right');
+				} else if (ch == 219) {
+					go('tower_left');
+				} else if (ch == 221) {
+					go('tower_right');
+				} else { go('stop');}
+			}
+
 		</script>
 	</head>
 	<body>
