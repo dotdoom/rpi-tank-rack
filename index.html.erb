@@ -38,10 +38,13 @@
 			document.onkeydown = key_down;
 			var socket = new WebSocket('ws://<%= request_host_with_port %>/controls');
 
+			socket.onopen = function(e) { console.log('open'); }
+			socket.onclose = function(e) { console.log('close'); }
+			socket.onmessage = function(e) { console.log('message'); }
+			socket.onerror = function(e) { console.log('error'); }
+
 			function go(action) {
-				var req = new XMLHttpRequest();
-				req.open('GET', '/go?action=' + action, true);
-				req.send();
+				socket.send(action);
 			}
 
 			function key_down(e) {

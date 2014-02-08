@@ -1,6 +1,7 @@
 require 'cgi'
 require 'erb'
 require 'socket'
+require 'thin'
 require 'rack/websocket'
 
 module RPiTank
@@ -13,21 +14,8 @@ end
 
 class WebApplication
 	RESPONSE_INTERNAL_SERVER_ERROR = [500, { 'Content-Type' => 'text/plain' }, ['Internal Server Error']]
-	CONTROLS = {
-		'left'       => '23',
-		'right'      => '26',
-		'forward'    => '26 23',
-		'backward'   => '24 22',
-		'tower_left' => '21',
-		'tower_right'=> '19',
-	}
 
 	attr_reader :params, :source_ip, :request_host_with_port, :request_host
-
-	def go
-		connection.puts "set_output #{CONTROLS[params['action'].join]}"
-		[200, { 'Content-Type' => 'text/plain' }, ['ok']]
-	end
 
 	def call(env)
 		@source_ip = env['HTTP_X_REAL_IP'] || env['REMOTE_ADDR']
@@ -41,15 +29,36 @@ class WebApplication
 		warn "Error #{$!.inspect} at:\n#{$!.backtrace.join $/}"
 		RESPONSE_INTERNAL_SERVER_ERROR
 	end
-
-	def connection
-		@connection ||= TCPSocket.new 'localhost', 11700
-	end
 end
 
 class SocketControlApplication < Rack::WebSocket::Application
+	CONTROLS = {
+		'left'       => '23',
+		'right'      => '26',
+		'forward'    => '26 23',
+		'backward'   => '24 22',
+		'tower_left' => '21',
+		'tower_right'=> '19',
+	}
+
 	def on_open(env)
-		[200, {}, ['test']]
+		puts 'opened'
+	end
+
+	def on_close(env)
+		puts 'closed'
+	end
+
+	def on_message(env, msg)
+		connection.puts "set_output #{CONTROLS[msg]}"
+	end
+
+	def on_error(env, error)
+		puts "error: #{error.inspect}"
+	end
+
+	def connection
+		@connection ||= TCPSocket.new 'localhost', 11700
 	end
 end
 
