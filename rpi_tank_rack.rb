@@ -1,6 +1,9 @@
 require 'cgi'
 require 'erb'
 require 'socket'
+require 'rack/websocket'
+
+module RPiTank
 
 class VideoStreamer
 	def kill_if_exists
@@ -8,10 +11,8 @@ class VideoStreamer
 	end
 end
 
-class RPiTankRack
-	ALLOWED_ACTIONS = %w(home go)
+class WebApplication
 	RESPONSE_INTERNAL_SERVER_ERROR = [500, { 'Content-Type' => 'text/plain' }, ['Internal Server Error']]
-	RESPONSE_FORBIDDEN = [403, { 'Content-Type' => 'text/plain' }, ['Forbidden']]
 	CONTROLS = {
 		'left'       => '23',
 		'right'      => '26',
@@ -21,11 +22,7 @@ class RPiTankRack
 		'tower_right'=> '19',
 	}
 
-	attr_reader :params, :path, :source_ip
-
-	def home
-		[200, { 'Content-Type' => 'text/html' }, [ERB.new(File.read('home.html.erb')).result(binding)]]
-	end
+	attr_reader :params, :source_ip, :request_host_with_port, :request_host
 
 	def go
 		connection.puts "set_output #{CONTROLS[params['action'].join]}"
@@ -34,16 +31,13 @@ class RPiTankRack
 
 	def call(env)
 		@source_ip = env['HTTP_X_REAL_IP'] || env['REMOTE_ADDR']
-		@path = env['PATH_INFO'].to_s[1..-1] # strip leading '/'
-		@path = ALLOWED_ACTIONS.first if @path.empty?
 		@params = CGI::parse(env['QUERY_STRING'].to_s)
+		@request_host_with_port = env['HTTP_HOST']
+		@request_host = @request_host_with_port.split(':', 2).first
 
-		raise 'Forbidden' unless ALLOWED_ACTIONS.include?(path)
-
-		public_send(@path)
+		[200, { 'Content-Type' => 'text/html' }, [ERB.new(File.read('index.html.erb')).result(binding)]]
 	rescue
-		return RESPONSE_FORBIDDEN if $!.message == 'Forbidden'
-		warn "Exception when processing #{path} with #{params} from #{source_ip}"
+		warn "Exception when processing with #{params} from #{source_ip}"
 		warn "Error #{$!.inspect} at:\n#{$!.backtrace.join $/}"
 		RESPONSE_INTERNAL_SERVER_ERROR
 	end
@@ -52,3 +46,11 @@ class RPiTankRack
 		@connection ||= TCPSocket.new 'localhost', 11700
 	end
 end
+
+class SocketControlApplication < Rack::WebSocket::Application
+	def on_open(env)
+		[200, {}, ['test']]
+	end
+end
+
+end # module

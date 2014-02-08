@@ -1,0 +1,67 @@
+<html>
+	<head>
+		<title>Raspberry PI Tank Control</title>
+	</head>
+	<body>
+		<pre>Your ip <%= source_ip %>.</pre>
+		<img src='http://<%= request_host %>:8280/?action=stream'>
+
+		<table>
+			<tr>
+				<td/>
+				<td>
+					<input type='button' value='Forward' onclick='javascript:go("forward")' />
+				</td>
+				<td/>
+			</tr>
+			<tr>
+				<td>
+					<input type='button' value='Left' onclick='javascript:go("left")' />
+				</td>
+				<td>
+					<input type='button' value='Stop' onclick='javascript:go("stop")' />
+				</td>
+				<td>
+					<input type='button' value='Right' onclick='javascript:go("right")' />
+				</td>
+			</tr>
+			<tr>
+				<td/>
+				<td>
+					<input type='button' value='Backward' onclick='javascript:go("backward")' />
+				</td>
+				<td/>
+			</tr>
+		</table>
+
+		<script type="text/javascript">
+			document.onkeydown = key_down;
+			var socket = new WebSocket('ws://<%= request_host_with_port %>/controls');
+
+			function go(action) {
+				var req = new XMLHttpRequest();
+				req.open('GET', '/go?action=' + action, true);
+				req.send();
+			}
+
+			function key_down(e) {
+				var ch = e.keyCode;
+				switch (e.keyCode) {
+				case 87:
+					return go('forward');
+				case 83:
+					return go('backward');
+				case 65:
+					return go('left');
+				case 68:
+					return go('right');
+				case 219:
+					return go('tower_left');
+				case 221:
+					return go('tower_right');
+				}
+			}
+		</script>
+	</body>
+</html>
+
