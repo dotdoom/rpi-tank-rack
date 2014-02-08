@@ -2,6 +2,12 @@ require 'cgi'
 require 'erb'
 require 'socket'
 
+class VideoStreamer
+	def kill_if_exists
+		Process.kill(:QUIT, @child)
+	end
+end
+
 class RPiTankRack
 	ALLOWED_ACTIONS = %w(home go)
 	RESPONSE_INTERNAL_SERVER_ERROR = [500, { 'Content-Type' => 'text/plain' }, ['Internal Server Error']]
