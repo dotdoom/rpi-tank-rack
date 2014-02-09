@@ -56,6 +56,7 @@
 				if (socket) {
 					socket.send(action);
 				} else {
+					warn(null);
 					socket = new WebSocket('ws://<%= request_host_with_port %>/controls');
 
 					socket.onopen = function(e) {

@@ -25,10 +25,15 @@ class VideoStreamer
 		end
 
 		def stop
-			while pid = self.pid
+			pid = self.pid
+
+			5.times do
 				Process.kill(:QUIT, pid)
 				sleep 1
 			end
+
+			Process.kill(:KILL, pid)
+		rescue
 		end
 
 		def pid
@@ -39,15 +44,20 @@ class VideoStreamer
 			File.unlink(PIDFILE)
 			nil
 		end
+
+		alias_method :running?, :pid
 	end
 end
 
 class WebApplication
 	RESPONSE_INTERNAL_SERVER_ERROR = [500, { 'Content-Type' => 'text/plain' }, ['Internal Server Error']]
+	RESPONSE_NOT_FOUND = [404, { 'Content-Type' => 'text/plain' }, ['Not Found']]
 
 	attr_reader :params, :source_ip, :request_host_with_port, :request_host
 
 	def call(env)
+		return RESPONSE_NOT_FOUND unless env['PATH_INFO'] == '/'
+
 		@source_ip = env['HTTP_X_REAL_IP'] || env['REMOTE_ADDR']
 		@params = CGI::parse(env['QUERY_STRING'].to_s)
 		@request_host_with_port = env['HTTP_HOST']
@@ -55,6 +65,8 @@ class WebApplication
 
 		if (res = @params['res']) && res.any?
 			VideoStreamer.start(resolution: res.first)
+		elsif !VideoStreamer.running?
+			VideoStreamer.start
 		end
 
 		[200, { 'Content-Type' => 'text/html' }, [ERB.new(File.read('index.html.erb')).result(binding)]]
