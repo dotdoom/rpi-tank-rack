@@ -34,12 +34,13 @@ class VideoStreamer
 
 			Process.kill(:KILL, pid)
 		rescue
+			puts "Kill #{pid}: #$!"
 		end
 
 		def pid
-			pid = File.read(PIDFILE) rescue return
+			pid = File.read(PIDFILE).to_i rescue return
 			Process.kill(0, pid)
-			pid.to_i
+			pid
 		rescue
 			File.unlink(PIDFILE)
 			nil
