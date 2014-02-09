@@ -33,12 +33,13 @@ end
 
 class SocketControlApplication < Rack::WebSocket::Application
 	CONTROLS = {
-		'left'       => '23',
-		'right'      => '26',
-		'forward'    => '26 23',
-		'backward'   => '24 22',
-		'tower_left' => '21',
-		'tower_right'=> '19',
+		'left'        => '23',
+		'right'       => '26',
+		'forward'     => '26 23',
+		'backward'    => '24 22',
+		'tower_left'  => '21',
+		'tower_right' => '19',
+		'stop'        => '',
 	}
 
 	def on_open(env)
@@ -50,8 +51,9 @@ class SocketControlApplication < Rack::WebSocket::Application
 	end
 
 	def on_message(env, msg)
-		puts "WebSocket: Message #{msg.inspect}"
-		connection.puts "set_output #{CONTROLS[msg]}"
+		translated_message = CONTROLS[msg]
+		puts "WebSocket: Message #{msg.inspect} => #{translated_message.inspect}"
+		connection.puts "set_output #{translated_message}"
 	rescue
 		puts "WebSocket: #$!"
 	end

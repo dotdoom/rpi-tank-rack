@@ -2,8 +2,10 @@
 	<head>
 		<title>Raspberry PI Tank Control</title>
 	</head>
-	<body>
-		<pre>Your ip <%= source_ip %>.</pre>
+	<body style="font-family: monospace">
+		<p>Client IP: <%= source_ip %>.</p>
+		<div id='warning' style='color: red'></div>
+
 		<img src='http://<%= request_host %>:8280/?action=stream'>
 
 		<table>
@@ -36,26 +38,33 @@
 
 		<script type="text/javascript">
 			document.onkeydown = key_down;
+			document.onkeyup = key_up;
+
+			var socket = null;
+
+			function warn(text) {
+				document.getElementById('warning').innerText = text;
+			}
 
 			function go(action) {
-				if (window.socket) {
+				if (socket) {
 					socket.send(action);
 				} else {
 					socket = new WebSocket('ws://<%= request_host_with_port %>/controls');
 
 					socket.onopen = function(e) {
-						console.log('WebSocket: open');
+						console.log('WebSocket: opened');
 						socket.send(action);
 					}
 					socket.onclose = function(e) {
-						console.log('WebSocket: close');
+						warn('WebSocket: closed (' + e.code + ' ' + e.reason + ')');
 						socket = null;
 					}
 					socket.onmessage = function(e) {
-						console.log('WebSocket: message');
+						console.log('WebSocket: message ' + e.data);
 					}
 					socket.onerror = function(e) {
-						console.log('WebSocket: error');
+						warn('WebSocket: error');
 					}
 				}
 			}
@@ -76,6 +85,10 @@
 				case 221:
 					return go('tower_right');
 				}
+			}
+
+			function key_up() {
+				go('stop');
 			}
 		</script>
 	</body>
