@@ -9,6 +9,8 @@ module RPiTank
 
 class VideoStreamer
 	class << self
+		PIDFILE = 'mjpg_stream.pid'
+
 		def start(options = {})
 			stop
 			command = "mjpg_streamer -i #{
@@ -17,11 +19,25 @@ class VideoStreamer
 					"-r #{(options[:resolution] || '640x480').to_s.shellescape}"
 				).shellescape} -o '/usr/lib/output_http.so -w /srv/http -p 8280'"
 			puts "Running: #{command}"
-			@child = spawn command
+
+			pid = spawn command
+			File.write(PIDFILE, pid)
 		end
 
 		def stop
-			Process.kill(:QUIT, @child) if @child
+			while pid = self.pid
+				Process.kill(:QUIT, pid)
+				sleep 1
+			end
+		end
+
+		def pid
+			pid = File.read(PIDFILE) rescue return
+			Process.kill(0, pid)
+			pid
+		rescue
+			File.unlink(PIDFILE)
+			nil
 		end
 	end
 end
