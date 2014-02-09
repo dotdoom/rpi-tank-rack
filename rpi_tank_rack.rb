@@ -7,8 +7,16 @@ require 'rack/websocket'
 module RPiTank
 
 class VideoStreamer
-	def kill_if_exists
-		Process.kill(:QUIT, @child)
+	class << self
+
+		def start(framerate = 20, resolution = '640x480')
+			stop
+			@child = spawn("mjpg_streamer -i '/usr/lib/input_uvc.so -f #{framerate} -r #{resolution}' -o '/usr/lib/output_http.so -w /srv/http -p 8280'")
+		end
+
+		def stop
+			Process.kill(:QUIT, @child)
+		end
 	end
 end
 
