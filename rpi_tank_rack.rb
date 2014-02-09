@@ -39,7 +39,7 @@ class VideoStreamer
 		def pid
 			pid = File.read(PIDFILE) rescue return
 			Process.kill(0, pid)
-			pid
+			pid.to_i
 		rescue
 			File.unlink(PIDFILE)
 			nil
