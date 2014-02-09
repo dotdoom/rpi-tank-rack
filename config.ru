@@ -1,7 +1,7 @@
 require_relative 'rpi_tank_rack'
 
 map '/controls' do
-	run RPiTank::SocketControlApplication.new(:backend => { :debug => true })
+	run RPiTank::SocketControlApplication.new
 end
 
 map '/' do

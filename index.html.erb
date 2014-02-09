@@ -36,15 +36,28 @@
 
 		<script type="text/javascript">
 			document.onkeydown = key_down;
-			var socket = new WebSocket('ws://<%= request_host_with_port %>/controls');
-
-			socket.onopen = function(e) { console.log('open'); }
-			socket.onclose = function(e) { console.log('close'); }
-			socket.onmessage = function(e) { console.log('message'); }
-			socket.onerror = function(e) { console.log('error'); }
 
 			function go(action) {
-				socket.send(action);
+				if (window.socket) {
+					socket.send(action);
+				} else {
+					socket = new WebSocket('ws://<%= request_host_with_port %>/controls');
+
+					socket.onopen = function(e) {
+						console.log('WebSocket: open');
+						socket.send(action);
+					}
+					socket.onclose = function(e) {
+						console.log('WebSocket: close');
+						socket = null;
+					}
+					socket.onmessage = function(e) {
+						console.log('WebSocket: message');
+					}
+					socket.onerror = function(e) {
+						console.log('WebSocket: error');
+					}
+				}
 			}
 
 			function key_down(e) {

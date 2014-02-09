@@ -42,19 +42,22 @@ class SocketControlApplication < Rack::WebSocket::Application
 	}
 
 	def on_open(env)
-		puts 'opened'
+		puts 'WebSocket: Client connected'
 	end
 
 	def on_close(env)
-		puts 'closed'
+		puts 'WebSocket: Client disconnected'
 	end
 
 	def on_message(env, msg)
+		puts "WebSocket: Message #{msg.inspect}"
 		connection.puts "set_output #{CONTROLS[msg]}"
+	rescue
+		puts "WebSocket: #$!"
 	end
 
 	def on_error(env, error)
-		puts "error: #{error.inspect}"
+		puts "WebSocket: #{error.inspect}"
 	end
 
 	def connection
