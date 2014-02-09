@@ -6,6 +6,12 @@
 		<p>Client IP: <%= source_ip %>.</p>
 		<div id='warning' style='color: red'></div>
 
+		<div>
+			<a href="/?res=960x720">960x720</a> |
+			<a href="/?res=640x480">640x480</a> |
+			<a href="/?res=320x240">320x240</a>
+		</div>
+
 		<img src='http://<%= request_host %>:8280/?action=stream'>
 
 		<table>

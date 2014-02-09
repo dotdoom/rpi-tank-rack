@@ -3,19 +3,25 @@ require 'erb'
 require 'socket'
 require 'thin'
 require 'rack/websocket'
+require 'shellwords'
 
 module RPiTank
 
 class VideoStreamer
 	class << self
-
-		def start(framerate = 20, resolution = '640x480')
+		def start(options = {})
 			stop
-			@child = spawn("mjpg_streamer -i '/usr/lib/input_uvc.so -f #{framerate} -r #{resolution}' -o '/usr/lib/output_http.so -w /srv/http -p 8280'")
+			command = "mjpg_streamer -i #{
+				("/usr/lib/input_uvc.so " <<
+					"-f #{(options[:framerate] || 20).to_s.shellescape} " <<
+					"-r #{(options[:resolution] || '640x480').to_s.shellescape}"
+				).shellescape} -o '/usr/lib/output_http.so -w /srv/http -p 8280'"
+			puts "Running: #{command}"
+			@child = spawn command
 		end
 
 		def stop
-			Process.kill(:QUIT, @child)
+			Process.kill(:QUIT, @child) if @child
 		end
 	end
 end
@@ -30,6 +36,10 @@ class WebApplication
 		@params = CGI::parse(env['QUERY_STRING'].to_s)
 		@request_host_with_port = env['HTTP_HOST']
 		@request_host = @request_host_with_port.split(':', 2).first
+
+		if (res = @params['res']) && res.any?
+			VideoStreamer.start(resolution: res.first)
+		end
 
 		[200, { 'Content-Type' => 'text/html' }, [ERB.new(File.read('index.html.erb')).result(binding)]]
 	rescue
