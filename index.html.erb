@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<title>Raspberry PI Tank Control</title>
+		<link rel="stylesheet" type="text/css" href="/static/arrows.css">
 	</head>
 	<body style="font-family: monospace">
 		<p>Client IP: <%= source_ip %>.</p>
@@ -11,48 +12,72 @@
 			<a href="/?res=640x480">640x480</a> |
 			<a href="/?res=320x240">320x240</a>
 		</div>
+		<br/>
 
-		<img src='http://<%= request_host %>:8280/?action=stream'>
-
-		<table>
-			<tr>
-				<td/>
-				<td>
-					<input type='button' value='Forward' onclick='javascript:go("forward")' />
-				</td>
-				<td/>
-			</tr>
-			<tr>
-				<td>
-					<input type='button' value='Left' onclick='javascript:go("left")' />
-				</td>
-				<td>
-					<input type='button' value='Stop' onclick='javascript:go("stop")' />
-				</td>
-				<td>
-					<input type='button' value='Right' onclick='javascript:go("right")' />
-				</td>
-			</tr>
-			<tr>
-				<td/>
-				<td>
-					<input type='button' value='Backward' onclick='javascript:go("backward")' />
-				</td>
-				<td/>
-			</tr>
-		</table>
+		<div style="float: left; padding: 10px">
+			<img src='http://<%= request_host %>:8280/?action=stream'>
+		</div>
+		<div style="float: left">
+			<table>
+				<tr>
+					<td>
+						<div id='tower_left' class="arrow arrow_left green" onmousedown="go_button(this)" onmouseup="stop_button(this)"></div>
+					</td>
+					<td><h3 style="text-align: center">tower</h3></td>
+					<td>
+						<div id='tower_right' class="arrow arrow_right green" onmousedown="go_button(this)" onmouseup="stop_button(this)"></div>
+					</td>
+				</tr>
+				<tr>
+					<td/>
+					<td>
+						<div id='forward' class="arrow arrow_up red" onmousedown="go_button(this)" onmouseup="stop_button(this)"></div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<div id='left' class="arrow arrow_left red" onmousedown="go_button(this)" onmouseup="stop_button(this)"></div>
+					</td>
+					<td><h3 style="text-align: center">engine</h3></td>
+					<td>
+						<div id='right' class="arrow arrow_right red" onmousedown="go_button(this)" onmouseup="stop_button(this)"></div>
+					</td>
+				</tr>
+				<tr>
+					<td/>
+					<td>
+						<div id='backward' class="arrow arrow_down red" onmousedown="go_button(this)" onmouseup="stop_button(this)"></div>
+					</td>
+				</tr>
+			</table>
+		</div>
 
 		<script type="text/javascript">
 			document.onkeydown = key_down;
 			document.onkeyup = key_up;
 
 			var socket = null;
+			var previous_action = null;
 
 			function warn(text) {
 				document.getElementById('warning').innerText = text;
 			}
 
 			function go(action) {
+				if (previous_action != action) {
+					var previous_button = document.getElementById(previous_action);
+					if (previous_button) {
+						previous_button.className = previous_button.className.replace('yellow',
+								previous_action.indexOf('tower') >= 0 ? 'green' : 'red');
+					}
+					var button = document.getElementById(action);
+					if (button) {
+						button.className = button.className.replace(/red|green/, 'yellow');
+					}
+
+					previous_action = action;
+				}
+
 				if (socket) {
 					socket.send(action);
 				} else {
@@ -74,6 +99,8 @@
 						warn('WebSocket: error');
 					}
 				}
+
+				return false;
 			}
 
 			function key_down(e) {
@@ -92,6 +119,15 @@
 				case 221:
 					return go('tower_right');
 				}
+				return true;
+			}
+
+			function go_button(btn) {
+				go(btn.id);
+			}
+
+			function stop_button(btn) {
+				go('stop');
 			}
 
 			function key_up() {

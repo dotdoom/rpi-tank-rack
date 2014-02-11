@@ -5,7 +5,7 @@ require 'thin'
 require 'rack/websocket'
 require 'shellwords'
 
-module RPiTank
+module RPiTankRack
 
 class VideoStreamer
 	class << self

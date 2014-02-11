@@ -1,9 +1,11 @@
 require_relative 'rpi_tank_rack'
 
+use Rack::Static, urls: ['/static']
+
 map '/controls' do
-	run RPiTank::SocketControlApplication.new
+	run RPiTankRack::SocketControlApplication.new
 end
 
 map '/' do
-	run RPiTank::WebApplication.new
+	run RPiTankRack::WebApplication.new
 end

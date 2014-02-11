@@ -1,0 +1,53 @@
+.arrow {
+	width: 122px;
+	height: 122px;
+	cursor: pointer;
+}
+
+.arrow_left.green {
+	background: url(/static/arrows.png) top 284px left 0px;
+}
+
+.arrow_right.green {
+	background: url(/static/arrows.png) top 284px left 468px;
+}
+
+.arrow_down.green {
+	background: url(/static/arrows.png) top 284px left 122px;
+}
+
+.arrow_up.green {
+	background: url(/static/arrows.png) top 284px left 295px;
+}
+
+.arrow_left.yellow {
+	background: url(/static/arrows.png) top 122px left 0px;
+}
+
+.arrow_right.yellow {
+	background: url(/static/arrows.png) top 122px left 468px;
+}
+
+.arrow_down.yellow {
+	background: url(/static/arrows.png) top 122px left 122px;
+}
+
+.arrow_up.yellow {
+	background: url(/static/arrows.png) top 122px left 295px;
+}
+
+.arrow_left.red {
+	background: url(/static/arrows.png) top 444px left 0px;
+}
+
+.arrow_right.red {
+	background: url(/static/arrows.png) top 444px left 468px;
+}
+
+.arrow_down.red {
+	background: url(/static/arrows.png) top 444px left 122px;
+}
+
+.arrow_up.red {
+	background: url(/static/arrows.png) top 444px left 295px;
+}
