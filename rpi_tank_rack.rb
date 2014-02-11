@@ -96,6 +96,7 @@ class SocketControlApplication < Rack::WebSocket::Application
 
 	def on_close(env)
 		puts 'WebSocket: Client disconnected'
+		connection.puts "quit"
 	end
 
 	def on_message(env, msg)
