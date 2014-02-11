@@ -20,7 +20,8 @@ class VideoStreamer
 				).shellescape} -o '/usr/lib/output_http.so -w /srv/http -p 8280'"
 			puts "Running: #{command}"
 
-			pid = spawn command
+			pid = Process.spawn command
+			Process.detach(pid)
 			File.write(PIDFILE, pid)
 		end
 
