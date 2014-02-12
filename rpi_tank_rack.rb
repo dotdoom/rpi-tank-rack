@@ -86,7 +86,7 @@ class SocketControlApplication < Rack::WebSocket::Application
 
 			# Protect against double directioning
 			def direction=(new_dir)
-				if @direction && new_dir
+				if @direction && @direction != new_dir
 					# Lockout
 					@direction = false
 				elsif @direction != false
