@@ -1,53 +1,53 @@
 .arrow {
-	width: 122px;
-	height: 122px;
+	width: 44px;
+	height: 44px;
 	cursor: pointer;
 }
 
-.arrow_left.green {
-	background: url(/static/arrows.png) top 284px left 0px;
+.engine_left.active {
+	background: url(/static/arrows/orange-left.png);
 }
 
-.arrow_right.green {
-	background: url(/static/arrows.png) top 284px left 468px;
+.engine_forward.active {
+	background: url(/static/arrows/orange-up.png);
 }
 
-.arrow_down.green {
-	background: url(/static/arrows.png) top 284px left 122px;
+.engine_reverse.active {
+	background: url(/static/arrows/orange-down.png);
 }
 
-.arrow_up.green {
-	background: url(/static/arrows.png) top 284px left 295px;
+.engine_right.active {
+	background: url(/static/arrows/orange-right.png);
 }
 
-.arrow_left.yellow {
-	background: url(/static/arrows.png) top 122px left 0px;
+.engine_left.inactive {
+	background: url(/static/arrows/grey-left.png);
 }
 
-.arrow_right.yellow {
-	background: url(/static/arrows.png) top 122px left 468px;
+.engine_forward.inactive {
+	background: url(/static/arrows/grey-up.png);
 }
 
-.arrow_down.yellow {
-	background: url(/static/arrows.png) top 122px left 122px;
+.engine_reverse.inactive {
+	background: url(/static/arrows/grey-down.png);
 }
 
-.arrow_up.yellow {
-	background: url(/static/arrows.png) top 122px left 295px;
+.engine_right.inactive {
+	background: url(/static/arrows/grey-right.png);
 }
 
-.arrow_left.red {
-	background: url(/static/arrows.png) top 444px left 0px;
+.tower_left.active {
+	background: url(/static/arrows/green-left.png);
 }
 
-.arrow_right.red {
-	background: url(/static/arrows.png) top 444px left 468px;
+.tower_right.active {
+	background: url(/static/arrows/green-right.png);
 }
 
-.arrow_down.red {
-	background: url(/static/arrows.png) top 444px left 122px;
+.tower_left.inactive {
+	background: url(/static/arrows/blue-left.png);
 }
 
-.arrow_up.red {
-	background: url(/static/arrows.png) top 444px left 295px;
+.tower_right.inactive {
+	background: url(/static/arrows/blue-right.png);
 }
