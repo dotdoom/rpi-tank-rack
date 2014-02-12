@@ -155,8 +155,8 @@ class SocketControlApplication < Rack::WebSocket::Application
 		'tower_left'         => -> ps { ps.tower.direction = :left },
 		'tower_right'        => -> ps { ps.tower.direction = :right },
 		'trackleft_forward'  => -> ps { ps.track_left.direction = :forward },
-		'trackright_forward' => -> ps { ps.track_right.direction = :reverse },
-		'trackleft_reverse'  => -> ps { ps.track_left.direction = :forward },
+		'trackright_forward' => -> ps { ps.track_right.direction = :forward },
+		'trackleft_reverse'  => -> ps { ps.track_left.direction = :reverse },
 		'trackright_reverse' => -> ps { ps.track_right.direction = :reverse },
 		'stop'               => -> ps {},
 	}
@@ -168,6 +168,7 @@ class SocketControlApplication < Rack::WebSocket::Application
 	def on_close(env)
 		puts 'WebSocket: Client disconnected'
 		connection.puts "quit"
+		connection.close
 	end
 
 	def on_message(env, msg)
@@ -175,6 +176,9 @@ class SocketControlApplication < Rack::WebSocket::Application
 		msg.split.each { |control| CONTROLS[control].call(power_state) } rescue false
 		puts "WebSocket: message #{msg.inspect} => #{power_state.to_s.inspect}"
 		connection.puts "set_output #{power_state.to_pin}"
+	rescue Errno::EPIPE
+		# Connection closed, reconnect soon.
+		@connection = nil
 	rescue
 		puts "WebSocket: #$!"
 	end
