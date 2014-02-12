@@ -81,7 +81,7 @@ end
 
 class SocketControlApplication < Rack::WebSocket::Application
 	class PowerState
-		class Directionable
+		module Directionable
 			attr_reader :direction
 
 			# Protect against double directioning
@@ -104,7 +104,9 @@ class SocketControlApplication < Rack::WebSocket::Application
 			end
 		end
 
-		class Track < Directionable
+		class Track
+			include Directionable
+
 			def initialize(forward_pin, reverse_pin)
 				@pins = {
 					forward: forward_pin,
@@ -115,7 +117,9 @@ class SocketControlApplication < Rack::WebSocket::Application
 
 		attr_reader :track_left, :track_right
 
-		class Tower < Directionable
+		class Tower
+			include Directionable
+
 			def initialize(left_pin, right_pin)
 				@pins = {
 					left: left_pin,
