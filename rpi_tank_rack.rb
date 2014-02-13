@@ -153,9 +153,16 @@ class SocketControlApplication < Rack::WebSocket::Application
 
 		attr_reader :tower
 
+		# Tank hardware Version 2(current) definitions:
+		#'left_forward'   => 26,
+		#'left_backward'  => 24,
+		#'right_forward'  => 23,
+		#'right_backward' => 22,
+		#'tower_left'     => 21,
+		#'tower_right'    => 19,
 		def initialize
-			@track_left = Track.new(26, nil) # TODO: 24?
-			@track_right = Track.new(23, nil) # TODO: 22?
+			@track_left = Track.new(26, 24)
+			@track_right = Track.new(23, 22)
 			@tower = Tower.new(21, 19)
 		end
 
