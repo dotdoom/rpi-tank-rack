@@ -80,6 +80,29 @@ class WebApplication
 end
 
 class SocketControlApplication < Rack::WebSocket::Application
+	class GpiodClient
+		def self.send(message)
+			reconnect unless @connection
+			puts "GPIOD Client: writing: #{message.inspect}"
+			2.times do
+				begin
+					@connection.puts message
+					break
+				rescue => e
+					puts "GPIOD Client: reconnect due to an error: #{e}"
+					reconnect
+				end
+			end
+		rescue
+			puts "GPIOD Client: #$!"
+		end
+
+		def self.reconnect
+			@connection.close if @connection
+			@connection = TCPSocket.new 'localhost', 11700
+		end
+	end
+
 	class PowerState
 		module Directionable
 			attr_reader :direction
@@ -171,28 +194,19 @@ class SocketControlApplication < Rack::WebSocket::Application
 
 	def on_close(env)
 		puts 'WebSocket: Client disconnected'
-		connection.puts "quit"
-		connection.close
 	end
 
 	def on_message(env, msg)
 		power_state.reset
 		msg.split.each { |control| CONTROLS[control].call(power_state) } rescue false
 		puts "WebSocket: message #{msg.inspect} => #{power_state.to_s.inspect}"
-		connection.puts "set_output #{power_state.to_pin}"
-	rescue Errno::EPIPE
-		# Connection closed, reconnect soon.
-		@connection = nil
+		GpiodClient.send  "set_output #{power_state.to_pin}"
 	rescue
 		puts "WebSocket: #$!"
 	end
 
 	def on_error(env, error)
-		puts "WebSocket: #{error.inspect}"
-	end
-
-	def connection
-		@connection ||= TCPSocket.new 'localhost', 11700
+		puts "WebSocket: Error: #{error}"
 	end
 
 	def power_state
