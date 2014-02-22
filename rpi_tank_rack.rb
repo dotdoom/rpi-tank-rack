@@ -55,10 +55,19 @@ class WebApplication
 	RESPONSE_INTERNAL_SERVER_ERROR = [500, { 'Content-Type' => 'text/plain' }, ['Internal Server Error']]
 	RESPONSE_NOT_FOUND = [404, { 'Content-Type' => 'text/plain' }, ['Not Found']]
 
-	attr_reader :params, :source_ip, :request_host_with_port, :request_host
+	attr_reader :params, :source_ip, :request_host_with_port, :request_host, :notice
 
 	def call(env)
 		return RESPONSE_NOT_FOUND unless env['PATH_INFO'] == '/'
+
+		req = Rack::Request.new(env)
+		if req.post?
+			program = CGI::parse(req.body.read)['program'].first
+			Thread.new do
+				PowerState.new(true).instance_eval(program)
+			end
+			@notice = 'Program started'
+		end
 
 		@source_ip = env['HTTP_X_REAL_IP'] || env['REMOTE_ADDR']
 		@params = CGI::parse(env['QUERY_STRING'].to_s)
@@ -69,10 +78,8 @@ class WebApplication
 		(res = @params['res']) && res.any? && (streaming_options[:resolution] = res.first)
 		(fps = @params['fps']) && fps.any? && (streaming_options[:framerate] = fps.first)
 
-		if streaming_options.any?
+		if streaming_options.any? || !VideoStreamer.running?
 			VideoStreamer.start(streaming_options)
-		elsif !VideoStreamer.running?
-			VideoStreamer.start
 		end
 
 		[200, { 'Content-Type' => 'text/html' }, [ERB.new(File.read('index.html.erb')).result(binding)]]
@@ -83,9 +90,11 @@ class WebApplication
 	end
 end
 
-class SocketControlApplication < Rack::WebSocket::Application
-	class GpiodClient
-		def self.send(message)
+class GpiodClient
+	@sync = Mutex.new
+
+	def self.send(message)
+		@sync.synchronize do
 			reconnect unless @connection
 			puts "GPIOD Client: writing: #{message.inspect}"
 			2.times do
@@ -97,95 +106,108 @@ class SocketControlApplication < Rack::WebSocket::Application
 					reconnect
 				end
 			end
-		rescue
-			puts "GPIOD Client: #$!"
 		end
-
-		def self.reconnect
-			@connection.close if @connection
-			@connection = TCPSocket.new 'localhost', 11700
-		end
+	rescue
+		puts "GPIOD Client: #$!"
 	end
 
-	class PowerState
-		module Directionable
-			attr_reader :direction
+	def self.reconnect
+		@connection.close if @connection
+		@connection = TCPSocket.new 'localhost', 11700
+	end
+end
 
-			# Protect against double directioning
-			def direction=(new_dir)
+class PowerState
+	module Directionable
+		attr_reader :direction
+
+		# Protect against double directioning
+		def direction=(new_dir)
+			if @submitter
+				@direction = new_dir
+				@submitter.submit
+			else
 				if @direction && @direction != new_dir
 					# Lockout
 					@direction = false
 				elsif @direction != false
 					@direction = new_dir
 				end
-				new_dir
 			end
 
-			def reset
-				@direction = nil
-			end
-
-			def to_pin
-				@pins[@direction]
-			end
-		end
-
-		class Track
-			include Directionable
-
-			def initialize(forward_pin, reverse_pin)
-				@pins = {
-					forward: forward_pin,
-					reverse: reverse_pin,
-				}
-			end
-		end
-
-		attr_reader :track_left, :track_right
-
-		class Tower
-			include Directionable
-
-			def initialize(left_pin, right_pin)
-				@pins = {
-					left: left_pin,
-					right: right_pin,
-				}
-			end
-		end
-
-		attr_reader :tower
-
-		# Tank hardware Version 2(current) definitions:
-		#'left_forward'   => 26,
-		#'left_backward'  => 24,
-		#'right_forward'  => 23,
-		#'right_backward' => 22,
-		#'tower_left'     => 21,
-		#'tower_right'    => 19,
-		def initialize
-			@track_left = Track.new(26, 24)
-			@track_right = Track.new(23, 22)
-			@tower = Tower.new(21, 19)
+			new_dir
 		end
 
 		def reset
-			[@track_left, @track_right, @tower].each(&:reset)
+			@direction = nil
+			@submitter.submit if @submitter
 		end
 
-		def submit
-			pins = [@track_left, @track_right, @tower].map(&:to_pin).compact.join(' ')
-			GpiodClient.send "set_output #{pins}"
-		end
-
-		def to_s
-			[@track_left, @track_right, @tower].zip(%w(LEFT RIGHT TOWER)).map { |object, name|
-				"#{name}: #{object.direction}" if object.direction
-			}.compact.join(', ')
+		def to_pin
+			@pins[@direction]
 		end
 	end
 
+	class Track
+		include Directionable
+
+		def initialize(forward_pin, reverse_pin, submitter)
+			@pins = {
+				forward: forward_pin,
+				reverse: reverse_pin,
+			}
+			@submitter = submitter
+		end
+	end
+
+	attr_reader :track_left, :track_right
+
+	class Tower
+		include Directionable
+
+		def initialize(left_pin, right_pin, submitter)
+			@pins = {
+				left: left_pin,
+				right: right_pin,
+			}
+			@submitter = submitter
+		end
+	end
+
+	attr_reader :tower
+
+	# Tank hardware Version 2(current) definitions:
+	#'left_forward'   => 26,
+	#'left_backward'  => 24,
+	#'right_forward'  => 23,
+	#'right_backward' => 22,
+	#'tower_left'     => 21,
+	#'tower_right'    => 19,
+	def initialize(autosubmit = false)
+		@track_left = Track.new(26, 24, autosubmit && self)
+		@track_right = Track.new(23, 22, autosubmit && self)
+		@tower = Tower.new(21, 19, autosubmit && self)
+		@autosubmit = autosubmit
+	end
+
+	def reset
+		[@track_left, @track_right, @tower].each(&:reset)
+	end
+
+	def submit
+		pins = [@track_left, @track_right, @tower].map(&:to_pin).compact.join(' ')
+		puts "PowerState: [#{self.to_s}] transmitting as [#{pins}]"
+		GpiodClient.send "set_output #{pins}"
+	end
+
+	def to_s
+		[@track_left, @track_right, @tower].zip(%w(LEFT RIGHT TOWER)).map { |object, name|
+			"#{name}: #{object.direction}" if object.direction
+		}.compact.join(', ')
+	end
+end
+
+class SocketControlApplication < Rack::WebSocket::Application
 	CONTROLS = {
 		'engine_left'        => -> ps { ps.track_right.direction = :forward },
 		'engine_right'       => -> ps { ps.track_left.direction = :forward },

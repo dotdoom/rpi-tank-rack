@@ -8,6 +8,7 @@
 	</head>
 	<body style="font-family: monospace">
 		<p>Client IP: <%= source_ip %>.</p>
+		<p><%= notice %></p>
 		<div id='warning' style='color: red'></div>
 
 		<div>
@@ -21,7 +22,7 @@
 			<img src='http://<%= request_host %>:8280/?action=stream'>
 		</div>
 		<div style="float: left">
-			<table>
+			<table id='controls'>
 				<tr>
 					<td>
 						<div id='tower_left' class="arrow tower_left inactive" onmousedown="button(this, true)" onmouseup="button(this, false)"></div>
@@ -84,7 +85,24 @@
 						<button onclick="view(false)">Switch to Classic View</button>
 					</td>
 				</tr>
+				<tr>
+					<td colspan='3'>
+						<button onclick="view('program')">Switch to Program View</button>
+					</td>
+				</tr>
 			</table>
+			<form id='program' method='POST' action='/' style='display: none'>
+				Programming RPI-TANK<br/>
+				<textarea name='program' rows='25' cols='80'>
+reset
+track_left.direction = :forward
+sleep 5
+track_left.direction = nil
+track_right.direction = :reverse
+sleep 5
+reset</textarea><br/>
+				<input type='submit' value='Run' />
+			</form>
 		</div>
 
 		<script type="text/javascript">
@@ -96,7 +114,9 @@
 			// Currently pushed buttons.
 			var actions = [];
 			// Flag not to flood server with 'stop'.
-			var stopped = false;
+			var stopped = true;
+			// Flag to indicate program mode (no return).
+			var program = false;
 			// Send 'actions' to 'socket', with reconnect availability.
 			function send_actions() {
 				if (socket) {
@@ -132,11 +152,17 @@
 				var tank_elements = document.getElementsByName('engine-tank');
 				var classic_elements = document.getElementsByName('engine-classic');
 
-				for (var i = 0; i < tank_elements.length; ++i) {
-					tank_elements[i].style.display = tank ? '' : 'none';
-				}
-				for (var i = 0; i < classic_elements.length; ++i) {
-					classic_elements[i].style.display = tank ? 'none' : '';
+				if (tank === 'program') {
+					program = true;
+					document.getElementById('controls').style.display = 'none';
+					document.getElementById('program').style.display = '';
+				} else {
+					for (var i = 0; i < tank_elements.length; ++i) {
+						tank_elements[i].style.display = tank ? '' : 'none';
+					}
+					for (var i = 0; i < classic_elements.length; ++i) {
+						classic_elements[i].style.display = tank ? 'none' : '';
+					}
 				}
 			}
 
@@ -198,6 +224,9 @@
 			};
 
 			function key(code, enabled) {
+				if (program) {
+					return true;
+				}
 				var action = key_action_mapping[code];
 				if (action) {
 					go(action, enabled);
