@@ -65,12 +65,12 @@ class WebApplication
 		@request_host_with_port = env['HTTP_HOST']
 		@request_host = @request_host_with_port.split(':', 2).first
 
-		if (res = @params['res']) && res.any?
-			if (fps = @params['fps']) && fps.any?
-                                VideoStreamer.start(resolution: res.first, framerate: fps.first)
-			else
-				VideoStreamer.start(resolution: res.first)
-			end
+		streaming_options = {}
+		(res = @params['res']) && res.any? && (streaming_options[:resolution] = res.first)
+		(fps = @params['fps']) && fps.any? && (streaming_options[:framerate] = fps.first)
+
+		if streaming_options.any?
+			VideoStreamer.start(streaming_options)
 		elsif !VideoStreamer.running?
 			VideoStreamer.start
 		end
