@@ -174,8 +174,9 @@ class SocketControlApplication < Rack::WebSocket::Application
 			[@track_left, @track_right, @tower].each(&:reset)
 		end
 
-		def to_pin
-			[@track_left, @track_right, @tower].map(&:to_pin).compact.join(' ')
+		def submit
+			pins = [@track_left, @track_right, @tower].map(&:to_pin).compact.join(' ')
+			GpiodClient.send "set_output #{pins}"
 		end
 
 		def to_s
@@ -211,7 +212,7 @@ class SocketControlApplication < Rack::WebSocket::Application
 		power_state.reset
 		msg.split.each { |control| CONTROLS[control].call(power_state) } rescue false
 		puts "WebSocket: message #{msg.inspect} => #{power_state.to_s.inspect}"
-		GpiodClient.send  "set_output #{power_state.to_pin}"
+		power_state.submit
 	rescue
 		puts "WebSocket: #$!"
 	end
