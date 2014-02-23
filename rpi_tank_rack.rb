@@ -205,7 +205,6 @@ class PowerState
 		# Autosubmit suggests we are in a programming mode; do not bother developers with re-sending commands.
 		# TODO(dotdoom): 2014-02-20: isolate this from Free Controls mode.
 		GpiodClient.send 'set_fallback_timeout 15' if @autosubmit
-		GpiodClient.send "set_fallback_timeout 15" if @autosubmit
 		GpiodClient.send "set_output #{pins}"
 	end
 
