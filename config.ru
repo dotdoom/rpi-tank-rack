@@ -1,4 +1,4 @@
-require_relative 'rpi_tank_rack'
+require './rpi_tank_rack'
 
 use Rack::Static, urls: ['/static']
 
